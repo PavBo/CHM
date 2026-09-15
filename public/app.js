@@ -8,7 +8,8 @@ const state = {
   serverOffset: 0,
   renderTimer: null,
   clockSyncTimer: null,
-  streamFallbackTimer: null
+  streamFallbackTimer: null,
+  finalResultTimer: null
 };
 
 const $ = (s) => document.querySelector(s);
@@ -87,6 +88,16 @@ function previewParticipant(t, s, slotIndex) {
   const tick = Math.max(0, Math.floor((serverNow() - Number(s.serverStartsAt || serverNow())) / 220));
   const idx = hashText(`${t.id}:${s.id}:${slotIndex}:${tick}`) % participants.length;
   return participants[idx];
+}
+
+function reelCard(p, extra = '') {
+  return `<div class="avatar-card reel-card ${extra}">${avatarHtml(p)}<div class="avatar-name">${esc(p.username)}</div></div>`;
+}
+function reelSequence(t, s, col, winners = null) {
+  const pool = Array.isArray(t.participants) && t.participants.length ? t.participants : [{ username:'—', avatarId:1 }];
+  const filler = Array.from({ length:9 }, (_, i) => pool[hashText(`${t.id}:${s.id}:${col}:${i}`) % pool.length]);
+  const items = winners ? [...filler, ...winners] : [...filler, ...filler];
+  return `<div class="reel-window"><div class="reel-strip ${winners?'is-stopping':'is-running'}" style="--reel:${col}">${items.map(p=>reelCard(p)).join('')}</div></div>`;
 }
 
 async function bootstrap() {
@@ -246,6 +257,7 @@ function closeTournament() {
   if (state.stream) { state.stream.close(); state.stream = null; }
   clearInterval(state.renderTimer); state.renderTimer = null;
   if (state.streamFallbackTimer) { clearInterval(state.streamFallbackTimer); state.streamFallbackTimer = null; }
+  if (state.finalResultTimer) { clearTimeout(state.finalResultTimer); state.finalResultTimer = null; }
   $('#tournamentOverlay').classList.add('hidden'); $('#tournamentOverlay').setAttribute('aria-hidden','true');
   if (state.user) loadTournaments().catch(()=>{});
 }
@@ -269,7 +281,10 @@ function renderTournamentView(t) {
   const root = $('#tournamentView');
   if (t.status === 'waiting') return renderWaiting(root, t);
   if (t.status === 'in_progress') return renderLive(root, t);
-  if (t.status === 'finished') return renderResults(root, t);
+  if (t.status === 'finished') {
+    if (t.finalResult && root.dataset.visualKind === 'final-spin') return renderFinalLanding(root, t);
+    return renderResults(root, t);
+  }
   if (t.status === 'canceled') return renderCanceled(root, t);
 }
 function renderWaiting(root,t) {
@@ -308,39 +323,51 @@ function renderLive(root,t) {
   const s = t.currentSpin;
   if (!s) { root.innerHTML=`<div class="tournament-view"><div class="tour-title">Турнир #${t.number}</div>${statsHtml(t)}<p class="tournament-note">Подготовка следующего спина…</p></div>`; return; }
   if (s.kind === 'final') return renderFinal(root,t,s);
-  const spinning = s.phase === 'spin';
-  const cards = [];
-  for (let col=0; col<3; col++) for (let row=0; row<3; row++) {
-    const winner = Array.isArray(s.rows?.[row]?.winners) ? s.rows[row].winners[col] : null;
-    const p = winner || previewParticipant(t, s, row * 3 + col);
-    cards.push({ row,col,p });
-  }
-  cards.sort((a,b)=>a.row-b.row||a.col-b.col);
+  const visualKey = `${s.id}:${s.phase === 'spin' ? 'spin' : 'settled'}`;
+  if (root.dataset.visualKey === visualKey) return;
   const left = phaseRemaining(s);
+  const columns = [0,1,2].map(col => {
+    const winners = s.phase === 'spin' ? null : [0,1,2].map(row => s.rows[row].winners[col]);
+    return reelSequence(t, s, col, winners);
+  }).join('');
   root.innerHTML = `<div class="tournament-view"><div class="tour-title">Турнир #${t.number}</div>${statsHtml(t)}
     <div class="reel-area"><div class="payout-column">${s.rows.map(r=>`<div class="payout-label">${coins(r.amount).replace(' Gold Coins',' GC')}</div>`).join('')}</div>
-      <div class="reels ${s.phase==='result'?'show-result':''}">${cards.map(x=>`<div class="avatar-card ${spinning?'spinning':''}">${avatarHtml(x.p)}<div class="avatar-name">${esc(x.p.username)}</div></div>`).join('')}</div>
+      <div class="reels reel-machine ${s.phase!=='spin'?'show-result':''}">${columns}</div>
     </div>
     <div class="spin-footer phase-${esc(s.phase||'spin')}"><small>${spinPhaseText(s)}</small><b data-spin-end="${phaseEndTimestamp(s)}">${formatShort(left)}</b></div></div>`;
+  root.dataset.visualKey = visualKey;
+  root.dataset.visualKind = 'ordinary';
 }
 function renderFinal(root,t,s) {
-  const revealed = s.phase !== 'spin' && Array.isArray(s.candidates) && s.candidates.length === 3;
-  const candidates = revealed
-    ? s.candidates
-    : [0,1,2].map(i => previewParticipant(t, s, 20 + i));
+  const visualKey = `${s.id}:final-spin`;
+  if (root.dataset.visualKey === visualKey) return;
   const left = phaseRemaining(s);
   const placeholders = '<div class="final-placeholder"></div>'.repeat(3);
   root.innerHTML=`<div class="tournament-view final-tournament-view"><div class="tour-title">Турнир #${t.number} · Финальный розыгрыш</div>${statsHtml(t)}
-    <div class="final-stage final-stage-figma ${revealed?'is-revealed':'is-spinning'}">
+    <div class="final-stage final-stage-figma is-spinning">
       <div class="final-side-column" aria-hidden="true">${placeholders}</div>
       <div class="final-center-column">
         <div class="final-prize-line"><small>Остаток</small><strong>${coins(s.totalPayout)}</strong></div>
-        <div class="final-reel-stack ${revealed?'':'spinning'}">${candidates.map((p,i)=>`<div class="avatar-card final-candidate ${revealed&&i===1?'winner-center is-final-winner':''}">${avatarHtml(p)}<div class="avatar-name">${esc(p.username)}</div></div>`).join('')}</div>
+        <div class="final-reel-window">${reelSequence(t,s,1).replace('reel-window','reel-window final-running-reel')}</div>
       </div>
       <div class="final-side-column" aria-hidden="true">${placeholders}</div>
     </div>
-    <div class="final-caption">${revealed?'Весь остаток получает центральный игрок':'Определяем победителя финального розыгрыша'}</div>
-    <div class="spin-footer phase-final ${revealed?'is-complete':''}"><small>${revealed?'Результат':'Финальный спин'}</small><b data-spin-end="${phaseEndTimestamp(s)}">${formatShort(left)}</b></div></div>`;
+    <div class="final-caption">Определяем победителя финального розыгрыша</div>
+    <div class="spin-footer phase-final"><small>Финальный спин</small><b data-spin-end="${phaseEndTimestamp(s)}">${formatShort(left)}</b></div></div>`;
+  root.dataset.visualKey = visualKey;
+  root.dataset.visualKind = 'final-spin';
+}
+function renderFinalLanding(root,t) {
+  const s = t.finalResult;
+  const placeholders = '<div class="final-placeholder"></div>'.repeat(3);
+  root.innerHTML=`<div class="tournament-view final-tournament-view"><div class="tour-title">Турнир #${t.number} · Финальный розыгрыш</div>${statsHtml(t)}
+    <div class="final-stage final-stage-figma is-revealed"><div class="final-side-column" aria-hidden="true">${placeholders}</div><div class="final-center-column">
+      <div class="final-prize-line"><small>Остаток</small><strong>${coins(s.totalPayout)}</strong></div>
+      <div class="final-reel-window final-landing-reel">${reelSequence(t,s,1,s.candidates).replace('reel-window','reel-window final-result-window')}</div>
+    </div><div class="final-side-column" aria-hidden="true">${placeholders}</div></div>
+    <div class="final-caption">Весь остаток получает центральный игрок</div><div class="spin-footer phase-final is-complete"><small>Результат</small><b>00:02</b></div></div>`;
+  root.dataset.visualKind = 'final-result';
+  state.finalResultTimer = setTimeout(() => { state.finalResultTimer = null; if (state.openTournamentId === t.id) renderResults(root,t); }, 2600);
 }
 function renderResults(root,t) {
   const rows=t.results||[];
