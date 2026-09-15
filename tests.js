@@ -178,6 +178,8 @@ class Client {
     assert.equal(d.tournament.awarded,10);
     assert.equal(d.tournament.remaining,0);
     assert.equal(d.tournament.myWinnings,10);
+    assert.equal(d.tournament.finalResult?.candidates.length,3);
+    assert.deepEqual(d.tournament.finalResult?.winner,d.tournament.finalResult?.candidates[1]);
     const engineDb = readDb().tournaments.find(t=>t.id===created.tournament.id);
     const finalSpin = engineDb.spins.find(s=>s.kind==='final');
     assert.equal(finalSpin.candidates.length,3);

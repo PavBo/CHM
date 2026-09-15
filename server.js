@@ -579,8 +579,14 @@ function publicTournament(t, userId = null) {
     totalContributions: t.totalContributions, commission: t.commission, prizeBank: t.prizeBank, awarded: t.awarded, remaining: t.remaining,
     currentSpin: currentSpinInfo(t),
     cancelReason: t.cancelReason,
-    results: ['finished'].includes(t.status) ? resultsFor(t) : undefined
+    results: ['finished'].includes(t.status) ? resultsFor(t) : undefined,
+    finalResult: t.status === 'finished' ? publicFinalResult(t) : undefined
   };
+}
+function publicFinalResult(t) {
+  const spin = [...(t.spins || [])].reverse().find(s => s.kind === 'final');
+  if (!spin) return null;
+  return { id:spin.id, kind:spin.kind, candidates:spin.candidates, winner:spin.winner, totalPayout:spin.totalPayout };
 }
 function resultsFor(t) {
   return t.participants.map(p => ({
