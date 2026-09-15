@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: chsl-test
+    runtime: node
+    buildCommand: ""
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: CHSL_SOLO_DEMO
+        value: "1"
+      - key: NODE_VERSION
+        value: "22"

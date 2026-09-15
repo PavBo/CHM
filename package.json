@@ -1,0 +1,15 @@
+{
+  "name": "chsl-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ЧСЛ — Человеческая слот-машина MVP",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests.js",
+    "test:restart": "node tests-restart.js",
+    "test:all": "node tests.js && node tests-restart.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

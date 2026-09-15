@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>ЧСЛ — Человеческая слот-машина</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <header class="site-header">
+      <div class="brand" aria-label="Лотерейные турниры">
+        <img class="brand-image" src="/assets/brand-logo.png" alt="Лотерейные турниры" />
+      </div>
+      <div id="userBar" class="user-bar hidden">
+        <div class="balance-pill" title="Доступный баланс"><span class="wallet-icon">▣</span><b id="balanceValue">0</b>&nbsp;Gold Coins</div>
+        <div class="user-menu-wrap">
+          <button id="userMenuBtn" class="user-menu-btn"><span id="usernameValue">Name</span><span>⌄</span></button>
+          <div id="userDropdown" class="user-dropdown hidden">
+            <a id="adminLink" href="/admin" class="hidden">Администрирование</a>
+            <button id="logoutBtn">Выйти</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main id="mainContent" class="page hidden">
+      <section class="hero">
+        <div class="hero-copy">
+          <h1>Участвуй в турнирах,<br>соревнуйся с соперниками</h1>
+          <p>Каждый день десятки турниров. Стань частью игры и выигрывай каждый день.</p>
+          <button id="heroDetailsBtn" class="btn btn-black">Подробнее</button>
+        </div>
+        <div class="slot-hero" aria-hidden="true">
+          <img src="/assets/hero-slot.png" alt="" />
+        </div>
+      </section>
+
+      <section class="tournaments-section">
+        <div class="section-title-row">
+          <h2>Турниры</h2>
+          <button id="rulesBtn" class="btn btn-gradient">Правила турниров</button>
+        </div>
+        <div id="testModeNotice" class="test-release-note hidden" role="note">
+          <b>Тестовый режим</b>
+          <span>Турниры с меткой «можно одному»: взнос 10 Gold Coins, минимум 1 участник, старт каждые 2 минуты.</span>
+        </div>
+        <div class="tabs" role="tablist">
+          <button class="tab active" data-scope="active">Действующие</button>
+          <button class="tab" data-scope="mine">Где я участвую</button>
+          <button class="tab" data-scope="past">Прошедшие</button>
+        </div>
+
+        <div id="tableWrap" class="tournament-table-wrap">
+          <div class="table-head tournament-grid">
+            <span>Номер турнира</span><span>Взнос на участие</span><span>Участники</span><span>Время старта</span><span>Статус</span><span></span>
+          </div>
+          <div id="tournamentRows" class="tournament-rows"></div>
+          <div id="emptyState" class="empty-state hidden">Турниров в этом разделе пока нет.</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="authOverlay" class="overlay auth-overlay">
+    <section class="modal auth-card">
+      <div class="auth-logo"><img src="/assets/brand-logo.png" alt="Лотерейные турниры" /></div>
+      <h2>Добро пожаловать</h2>
+      <p class="muted">MVP: вход только по уникальному username.</p>
+      <div class="auth-tabs"><button data-auth="login" class="active">Войти</button><button data-auth="register">Регистрация</button></div>
+      <form id="authForm">
+        <label>Username<input id="authUsername" autocomplete="username" maxlength="20" placeholder="Например, Pavel" required /></label>
+        <p id="authHint" class="field-hint">3–20 символов, только буквы и цифры.</p>
+        <button id="authSubmit" class="btn btn-gradient full" type="submit">Войти</button>
+        <p id="authError" class="error hidden"></p>
+      </form>
+      <p class="demo-hint">Для админ-панели: username <b>Admin</b>.</p>
+    </section>
+  </div>
+
+  <div id="genericModal" class="overlay hidden" aria-hidden="true"><section id="genericModalCard" class="modal generic-modal"></section></div>
+  <div id="tournamentOverlay" class="overlay hidden" aria-hidden="true">
+    <section class="tournament-modal">
+      <button id="closeTournament" class="icon-close" aria-label="Закрыть">×</button>
+      <div id="tournamentView"></div>
+    </section>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

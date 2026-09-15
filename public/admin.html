@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ЧСЛ — Администрирование</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+<header class="site-header">
+  <a href="/" class="brand admin-brand"><img class="brand-image" src="/assets/brand-logo.png" alt="Лотерейные турниры"><span class="admin-brand-tag">АДМИН</span></a>
+  <a class="admin-back" href="/">← К приложению</a>
+</header>
+<main class="admin-page">
+  <div class="admin-heading"><div><h1>Администрирование</h1><p>Шаблоны — источник настроек для новых турниров. Уже созданные турниры сохраняют свой снимок настроек.</p></div><div id="adminUser"></div></div>
+
+  <section class="admin-card">
+    <div class="admin-card-head"><h2>Состояние системы</h2><button id="runAudit" class="btn btn-secondary">Проверить</button></div>
+    <div id="dashboardCards" class="admin-metrics"></div>
+    <div id="auditState" class="audit-state"></div>
+  </section>
+
+  <section class="admin-card">
+    <div class="admin-section-kicker">ШАБЛОНЫ</div><h2>Создать шаблон турнира</h2>
+    <form id="templateForm" class="admin-form grid-form">
+      <label>Название<input name="name" value="Новый турнир" required></label>
+      <label>Взнос, GC<input name="fee" type="number" min="1" value="10" required></label>
+      <label>Мин. игроков<input name="minPlayers" type="number" min="1" value="4" required></label>
+      <label>Макс. игроков<input name="maxPlayers" type="number" min="1" max="96" value="40" required></label>
+      <label>Комиссия, %<input name="commissionPercent" type="number" min="0" max="100" value="15" required></label>
+      <label>Выплаты строк 1 / 2 / 3<input name="rowPayouts" value="1,2,3" required></label>
+      <button class="btn btn-gradient" type="submit">Создать шаблон</button>
+    </form>
+    <p id="templateMsg"></p>
+  </section>
+
+  <section class="admin-card">
+    <div class="admin-card-head"><h2>Шаблоны</h2><span class="muted">Неактивный шаблон нельзя использовать для новых турниров, но уже созданные турниры не меняются.</span></div>
+    <div id="templateList" class="admin-list"></div>
+  </section>
+
+  <section class="admin-card">
+    <div class="admin-section-kicker">РАСПИСАНИЯ</div><h2>Создать период расписания</h2>
+    <p class="muted">В выбранном периоде будет автоматически создано указанное количество турниров, равномерно распределённых по времени. Для администратора нет ограничения «только будущее»: можно указать прошлое, текущее или будущее время. Расписание редактируется только целиком. Турниры, которые уже начались или уже имеют участников, при редактировании не меняются.</p>
+    <form id="scheduleForm" class="admin-form grid-form">
+      <label>Название периода<input name="name" value="Дневной период" required></label>
+      <label>Шаблон<select name="templateId" id="scheduleTemplateSelect"></select></label>
+      <label>Количество турниров<input name="count" type="number" min="1" max="200" value="4" required></label>
+      <label>Начало периода<input name="periodStart" id="periodStart" type="datetime-local" required></label>
+      <label>Конец периода<input name="periodEnd" id="periodEnd" type="datetime-local" required></label>
+      <div class="schedule-actions"><button id="scheduleSubmit" class="btn btn-gradient" type="submit">Создать расписание</button><button id="cancelScheduleEdit" class="btn btn-secondary hidden" type="button">Отменить редактирование</button></div>
+    </form>
+    <p id="scheduleMsg"></p>
+    <div class="test-schedule-box">
+      <div><b>Тестовый одиночный режим</b><span>10 Gold Coins · минимум 1 игрок · турнир каждые 2 минуты · период около 1 часа.</span></div>
+      <button id="createSoloTestSchedule" class="btn btn-gradient" type="button">Создать тестовый период</button>
+    </div>
+    <div id="scheduleList" class="schedule-list"></div>
+  </section>
+
+  <section class="admin-card">
+    <div class="admin-section-kicker">РУЧНОЙ ЗАПУСК</div><h2>Создать турнир вручную</h2>
+    <form id="tournamentForm" class="admin-form grid-form">
+      <label>Шаблон<select name="templateId" id="templateSelect"></select></label>
+      <label>Дата и время старта<input name="startAt" id="startAt" type="datetime-local" required></label>
+      <button class="btn btn-gradient" type="submit">Создать турнир</button>
+    </form>
+    <p id="tournamentMsg"></p>
+  </section>
+
+  <section class="admin-card">
+    <div class="admin-card-head"><h2>Турниры</h2><button id="reloadAdmin" class="btn btn-secondary">Обновить</button></div>
+    <div id="adminTournaments" class="admin-list"></div>
+  </section>
+</main>
+
+<div id="adminDetailModal" class="admin-detail-modal hidden" aria-hidden="true">
+  <div class="admin-detail-card">
+    <button id="closeAdminDetail" class="admin-detail-close" aria-label="Закрыть">×</button>
+    <div id="adminDetailBody"></div>
+  </div>
+</div>
+<script src="/admin.js"></script>
+</body>
+</html>
